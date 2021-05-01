@@ -1,0 +1,221 @@
+<h1 class="roomName">Room: {{room}}</h1>
+<div class="flex">
+    <div class="box-message" id="me" style="height: 300px">
+        <div class="my-turn remaining-time"></div>
+        <h1 class="player-name">{{user}}</h1>
+        <p class="myMessage text-message"></p>
+    </div>
+    <div class="caro-board"></div>
+    <div class="box-message" id="competitor" style="height: 300px">
+        <div class="your-turn remaining-time"></div>
+        <h1 class="player-name" id="competitor-name"></h1>
+        <p class="message text-message"></p>
+    </div>
+</div>
+<div class="box-chat container" style="width: 500px;">
+    <div class="typeMessage">
+        <textarea style="width: 100%;" name="" id="txtData" cols="50" rows="5"></textarea>
+        <button id="btnSubmit">Send</button>
+    </div>
+</div>
+
+
+{{!-- announced --}}
+<div class="box-announced">
+<div class="announced">win</div>
+<button class="btn-announced">chơi tiếp</button>
+</div>
+{{!-- SCRIPT --}}
+<script>
+    const $ = document.querySelector.bind(document);
+    const socket = io('http://localhost:3000/');
+    var user = "{{user}}", room = "{{room}}";
+    const caroBoard = $('.caro-board');
+    var limited;
+    var time = 16
+
+    socket.emit('connected', { user, room })
+    socket.on('friend-out', () => {
+        clearBoard();
+        socket.emit('friend-out');
+    })
+
+
+
+    socket.on('competitor', (nameCompetitor) => {
+        $('#competitor-name').textContent = nameCompetitor;
+        socket.emit('friend-in', '{{user}}');
+    })
+    socket.on('reply', (nameCompetitor) => {
+        $('#competitor-name').textContent = nameCompetitor;
+    })
+
+    {{!--CARO BOARD--}}
+
+
+    function clearBoard(){
+        var crossWord = document.querySelectorAll('.cross-word');
+        crossWord.forEach(item => {
+            item.textContent = '';
+        })
+    }
+
+    var turn = false;
+    function handleHit() {
+        
+        let row = this.getAttribute('row');
+        let col = this.getAttribute('col');
+        socket.emit('hit', row, col);
+        $('.my-turn').textContent='';
+
+        if(turn){
+            clearInterval(limited)
+        
+        let remainingTime = time;
+        $('.your-turn').textContent = remainingTime;
+        limited = setInterval(() => {
+            remainingTime--;
+            if (remainingTime <= 0) {
+                $('.your-turn').textContent='';
+                clearInterval(limited)
+            }
+            $('.your-turn').textContent = remainingTime;
+        }, 1000);
+        turn = false;
+        }
+        
+    }
+
+    for (let i = 0; i < 20; i++) {
+        for (let j = 0; j < 20; j++) {
+            let crossWord = document.createElement('div');
+            crossWord.classList.add('cross-word')
+            crossWord.setAttribute('row', i);
+            crossWord.setAttribute('col', j);
+            caroBoard.appendChild(crossWord);
+        }
+
+    }
+
+
+    var listCrossWord = [...document.getElementsByClassName('cross-word')];
+    listCrossWord.forEach((item, index) => {
+        item.addEventListener('click', handleHit)
+    })
+
+
+    socket.on('my-turn', () => {
+        turn = true;
+        clearInterval(limited)
+        let remainingTime = time;
+        $('.your-turn').textContent = '';
+        $('.my-turn').textContent = remainingTime;
+        limited = setInterval(() => {
+            remainingTime--;
+            $('.my-turn').textContent = remainingTime;
+            if (remainingTime <= 0) {
+                $('.my-turn').textContent='';
+                clearInterval(limited)
+            }
+        }, 1000)
+    })
+
+        
+        socket.on('auto-hit',(row,col)=>{
+            socket.emit('hit',row,col);
+            $('.my-turn').textContent='';
+            clearInterval(limited)
+
+            let remainingTime = time;
+            $('.your-turn').textContent = remainingTime;
+            limited = setInterval(() => {
+            remainingTime--;
+            if (remainingTime <= 0) {
+                $('.your-turn').textContent='';
+                clearInterval(limited)
+            }
+            $('.your-turn').textContent = remainingTime;
+            }, 1000)
+        })
+
+
+    socket.on('next-caro', (row, col, data) => {
+        var crossWord = $(`div[row="${row}"][col="${col}"]`);
+        crossWord.textContent = data;
+        if (data == 'x') {
+            crossWord.style.color = 'blue';
+        }else{
+            crossWord.style.color = 'red';
+        }
+    })
+
+    let remaining = document.querySelectorAll('.remaining-time');
+    socket.on('win', win => {
+        socket.emit('end');
+        $('.box-announced').style.display = 'block';
+        remaining.forEach((item)=>{
+            item.style.display = 'none'
+        })
+        clearInterval(limited);
+        if (win){
+            $('.announced').style.color = 'red';
+            $('.announced').textContent = 'win';
+        }
+        else {
+            $('.announced').style.color = 'black';
+            $('.announced').textContent = 'lose';
+        }
+    })
+
+    $('.btn-announced').onclick = function(){
+            remaining.forEach((item)=>{
+            item.style.display = 'block'
+        })
+            $('.box-announced').style.display = 'none';
+            clearBoard();
+            socket.emit('clear');
+        }
+
+
+
+
+
+    {{!--Chat --}}
+
+    let myMessage = null;
+    let message = null;
+
+    function handleSubmit() {
+        clearTimeout(myMessage);
+        var text = $('#txtData').value;
+        $('#txtData').value = '';
+        let p = document.getElementsByClassName('myMessage');
+        p[0].style.display='block';
+        p[0].textContent = text
+
+        myMessage = setTimeout(() => {
+                    p[0].style.display='none';
+                }, 6000);
+
+        socket.emit('client-sent-data', { user, room, text });
+    }
+
+    $('#btnSubmit').onclick = handleSubmit;
+
+    socket.on('server-sent-data', function (data) {
+        clearTimeout(message);
+        let p = document.getElementsByClassName('message');
+        p[0].style.display='block';
+        p[0].textContent = data.text;
+        message = setTimeout(() => {
+                    p[0].style.display='none';
+                }, 6000);
+    });
+
+    $('#txtData').onkeypress = function (e) {
+        if (e.key == 'Enter') {
+            e.preventDefault();
+            handleSubmit();
+        }
+    }
+</script>

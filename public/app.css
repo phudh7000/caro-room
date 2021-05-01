@@ -1,0 +1,137 @@
+*{
+    padding: 0;
+    margin: 0;
+    font-family: Comic Sans MS;
+}
+
+.Wrapper{
+    position: relative;
+    background: cornsilk;
+    min-height: 100vh;
+    overflow: auto;
+}
+.container{
+    width: max-content;
+    margin: 0 auto;
+}
+
+.roomName{
+    text-align: center;
+}
+
+.flex{
+    display: flex;
+    justify-content: space-between;
+}
+
+
+
+.remaining-time{
+    position: absolute;
+    top: -15%;
+    font-size: 50px;
+    width: 100%;
+}
+
+.player-name{
+    font-size: 15px;
+    margin-bottom: 10px;
+}
+
+.box-message{
+    position: relative;
+    width: 30%;
+    padding: 1rem;
+    text-align: center;
+}
+
+.text-message{
+    padding: 5px;
+    background-color: #fff;
+    border-radius: 5px;
+    overflow-wrap: anywhere;
+    margin-bottom: 5px;
+    display: none;
+}
+
+
+.caro-board{
+    width: max-content;
+    background-color: #fff;
+    display: grid;
+    grid-template-columns: repeat(20,auto);
+    grid-template-rows: repeat(20,auto);
+}
+
+.cross-word{
+    border: 1px solid royalblue;
+    display: block;
+    width: 25px;
+    height: 25px;
+    border-radius: 1px;
+    text-align: center;
+    color: red;
+    font-size: 30px;
+    line-height: 0.5;
+    font-weight: 600;
+    overflow: hidden;
+    cursor: pointer;
+}
+
+#txtData{
+    margin-top: 1rem;
+    outline: none;
+}
+
+#btnSubmit{
+    padding: 2px;
+    float: right;
+    color: royalblue;
+}
+
+
+.announced{
+    line-height: 1;
+    margin-top: 71px;
+    font-size: 18rem;
+    display: block;
+    opacity: 0.5;
+    overflow: auto;
+}
+.box-announced{
+    position: absolute;
+    top: 0;
+    width: 100%;
+    text-align: center;
+    display: none;
+}
+
+.btn-announced{
+    border: 1px solid royalblue;
+    outline: none;
+    background-color: royalblue;
+    font-size: 18px;
+    font-weight: 600;
+    padding: 10px;
+    border-radius: 24px;
+    color: #fff;
+    cursor: pointer;
+}
+.btn-announced:hover{
+    background-color: #fff;
+    color: royalblue;
+}
+
+@media only screen and (max-width: 700px){
+    .cross-word{
+        width: 20px;
+        height: 20px;
+    }
+}
+
+@media only screen and (max-width: 600px){
+    .cross-word{
+        width: 18px;
+        height: 18px;
+    }
+}
