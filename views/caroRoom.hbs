@@ -4,6 +4,7 @@
         <div class="my-turn remaining-time"></div>
         <h1 class="player-name">{{user}}</h1>
         <p class="myMessage text-message"></p>
+        <button class="btn-draw" id="btn-draw">Cầu Hòa</button>
     </div>
     <div class="caro-board"></div>
     <div class="box-message" id="competitor" style="height: 300px">
@@ -22,13 +23,13 @@
 
 {{!-- announced --}}
 <div class="box-announced">
-<div class="announced">win</div>
-<button class="btn-announced">chơi tiếp</button>
+    <div class="announced">win</div>
+    <button class="btn-announced">chơi tiếp</button>
 </div>
 {{!-- SCRIPT --}}
 <script>
     const $ = document.querySelector.bind(document);
-    const socket = io('https://caro-room.herokuapp.com');
+    const socket = io('http://localhost:3000');
     var user = "{{user}}", room = "{{room}}";
     const caroBoard = $('.caro-board');
     var limited;
@@ -43,6 +44,7 @@
 
 
     socket.on('competitor', (nameCompetitor) => {
+        clearBoard();
         $('#competitor-name').textContent = nameCompetitor;
         socket.emit('friend-in', '{{user}}');
     })
@@ -50,10 +52,10 @@
         $('#competitor-name').textContent = nameCompetitor;
     })
 
-    {{!--CARO BOARD--}}
+    //{{!--CARO BOARD--}}
 
 
-    function clearBoard(){
+    function clearBoard() {
         var crossWord = document.querySelectorAll('.cross-word');
         crossWord.forEach(item => {
             item.textContent = '';
@@ -62,28 +64,31 @@
 
     var turn = false;
     function handleHit() {
-        
+
         let row = this.getAttribute('row');
         let col = this.getAttribute('col');
         socket.emit('hit', row, col);
-        $('.my-turn').textContent='';
+        socket.on('friend-turn', () => {
+            $('.my-turn').textContent = '';
 
-        if(turn){
-            clearInterval(limited)
-        
-        let remainingTime = time;
-        $('.your-turn').textContent = remainingTime;
-        limited = setInterval(() => {
-            remainingTime--;
-            if (remainingTime <= 0) {
-                $('.your-turn').textContent='';
+            if (turn) {
                 clearInterval(limited)
+
+                let remainingTime = time;
+                $('.your-turn').textContent = remainingTime;
+                limited = setInterval(() => {
+                    remainingTime--;
+                    if (remainingTime <= 0) {
+                        $('.your-turn').textContent = '';
+                        clearInterval(limited)
+                    }
+                    $('.your-turn').textContent = remainingTime;
+                }, 1000);
+                turn = false;
             }
-            $('.your-turn').textContent = remainingTime;
-        }, 1000);
-        turn = false;
-        }
-        
+        })
+
+
     }
 
     for (let i = 0; i < 20; i++) {
@@ -114,29 +119,29 @@
             remainingTime--;
             $('.my-turn').textContent = remainingTime;
             if (remainingTime <= 0) {
-                $('.my-turn').textContent='';
+                $('.my-turn').textContent = '';
                 clearInterval(limited)
             }
         }, 1000)
     })
 
-        
-        socket.on('auto-hit',(row,col)=>{
-            socket.emit('hit',row,col);
-            $('.my-turn').textContent='';
-            clearInterval(limited)
 
-            let remainingTime = time;
-            $('.your-turn').textContent = remainingTime;
-            limited = setInterval(() => {
+    socket.on('auto-hit', (row, col) => {
+        socket.emit('hit', row, col);
+        $('.my-turn').textContent = '';
+        clearInterval(limited)
+
+        let remainingTime = time;
+        $('.your-turn').textContent = remainingTime;
+        limited = setInterval(() => {
             remainingTime--;
             if (remainingTime <= 0) {
-                $('.your-turn').textContent='';
+                $('.your-turn').textContent = '';
                 clearInterval(limited)
             }
             $('.your-turn').textContent = remainingTime;
-            }, 1000)
-        })
+        }, 1000)
+    })
 
 
     socket.on('next-caro', (row, col, data) => {
@@ -144,7 +149,7 @@
         crossWord.textContent = data;
         if (data == 'x') {
             crossWord.style.color = 'blue';
-        }else{
+        } else {
             crossWord.style.color = 'red';
         }
     })
@@ -153,11 +158,18 @@
     socket.on('win', win => {
         socket.emit('end');
         $('.box-announced').style.display = 'block';
-        remaining.forEach((item)=>{
+        remaining.forEach((item) => {
             item.style.display = 'none'
         })
         clearInterval(limited);
-        if (win){
+
+        if (win == 'no win or lose') {
+            $('.announced').style.color = 'green';
+            $('.announced').textContent = 'Hòa';
+            return;
+        }
+
+        if (win) {
             $('.announced').style.color = 'red';
             $('.announced').textContent = 'win';
         }
@@ -167,20 +179,52 @@
         }
     })
 
-    $('.btn-announced').onclick = function(){
-            remaining.forEach((item)=>{
+    $('.btn-announced').onclick = function () {
+        remaining.forEach((item) => {
             item.style.display = 'block'
+            item.textContent='';
         })
-            $('.box-announced').style.display = 'none';
-            clearBoard();
-            socket.emit('clear');
+        $('.box-announced').style.display = 'none';
+        clearBoard();
+        socket.emit('clear');
+    }
+
+
+    //DRAW
+
+    $('#btn-draw').onclick = function () {
+        if ($('.my-turn').textContent != '')
+            socket.emit('draw');
+    }
+
+    socket.on('draw please', () => {
+        let acceptDraw = document.createElement('div');
+        let accept = document.createElement('div');
+        let cancel = document.createElement('div');
+        acceptDraw.classList.add('accept-draw');
+        accept.classList.add('btn-draw');
+        accept.textContent = 'chấp nhận';
+        cancel.classList.add('btn-draw');
+        cancel.textContent = 'hủy';
+        acceptDraw.innerHTML = '<h2 style = "display: block;">Đối phương xin hòa</h2>';
+        acceptDraw.append(cancel, accept);
+
+        accept.onclick = () => {
+            socket.emit('accept draw');
+            acceptDraw.remove();
         }
+        cancel.onclick = () => {
+            acceptDraw.remove();
+        }
+        $('body').append(acceptDraw);
+
+        setTimeout(() => {
+            acceptDraw.remove();
+        }, 5000)
+    });
 
 
-
-
-
-    {{!--Chat --}}
+    //Chat
 
     let myMessage = null;
     let message = null;
@@ -190,12 +234,12 @@
         var text = $('#txtData').value;
         $('#txtData').value = '';
         let p = document.getElementsByClassName('myMessage');
-        p[0].style.display='block';
+        p[0].style.display = 'block';
         p[0].textContent = text
 
         myMessage = setTimeout(() => {
-                    p[0].style.display='none';
-                }, 6000);
+            p[0].style.display = 'none';
+        }, 6000);
 
         socket.emit('client-sent-data', { user, room, text });
     }
@@ -205,11 +249,11 @@
     socket.on('server-sent-data', function (data) {
         clearTimeout(message);
         let p = document.getElementsByClassName('message');
-        p[0].style.display='block';
+        p[0].style.display = 'block';
         p[0].textContent = data.text;
         message = setTimeout(() => {
-                    p[0].style.display='none';
-                }, 6000);
+            p[0].style.display = 'none';
+        }, 6000);
     });
 
     $('#txtData').onkeypress = function (e) {

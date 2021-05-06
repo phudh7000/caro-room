@@ -5,6 +5,8 @@ class socket {
 
         var listRoom = [];
         var boards = {};
+        var count = {};
+        var draw;
         var turn = {};
         function addPerson(data) {
             for (let i of listRoom) {
@@ -194,12 +196,21 @@ class socket {
             return false;
         }
 
-        function clearBoard(board) {
-            let l = board.length;
+        function clearBoard(room) {
+            let l = boards[room].length;
             for (let i = 0; i < l; i++) {
-                board.shift();
-                board.push([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
+                boards[room].shift();
+                boards[room].push([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
             }
+            count[room] = 0;
+        }
+
+        function shuffleArray(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return [...array];
         }
 
         
@@ -221,22 +232,26 @@ class socket {
                 you = addPerson(data);
                 room = data.room
                 boards[room] = boardCaro;
+                count[room] = 0;
                 turn[room] = 1;
                 socket.to(room).emit('competitor',data.user);
             })
 
 
             function randomHit(you, room){
-                while(true){
-                    let row = Math.round(Math.random()*19);
-                    let col = Math.round(Math.random()*19);
-                    if(boards[room][row][col] == 0){
-                        socket.to(room).emit('auto-hit', row, col);
-                        break;
-                    }
-                }
-                clearTimeout(autoHit); // chac chan
-
+                let arr = [0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19];
+                let rows = shuffleArray(arr);
+                let cols = shuffleArray(arr);
+                
+                rows.forEach((i)=>{
+                    cols.forEach((j)=>{
+                        if(boards[room][i][j] == 0){
+                        socket.to(room).emit('auto-hit', i, j);
+                        clearTimeout(autoHit);
+                        return;
+                    } 
+                    })
+                })
             }
 
                
@@ -246,20 +261,29 @@ class socket {
                 if (boards[room][row][col] == 0) {
 
                     clearTimeout(autoHit);
-                    clearTimeout(autoHit); // chac chan
-
+                    count[room]+=1;
                     socket.to(room).emit('my-turn');
+                    socket.emit('friend-turn');
                     io.in(room).emit('next-caro', row, col, data);
                     boards[room][row][col] = you;
                     if (checkWin(boards[room], you, row, col)) {
                         socket.emit('win', true)
                         socket.to(room).emit('win', false);
-                        clearBoard(boards[room]);
+                        clearBoard(room);
                         clearTimeout(autoHit);
                         turn[room] = you == 1 ? 2 : 1;
-                        turn[room]= -turn[room];
+                        turn[room]= -turn[room];   // khong ai duoc danh
                         return;
                     };
+
+                    if(count[room] == 400){
+                        io.in(room).emit('win', 'no win or lose');
+                        clearBoard(room);
+                        clearTimeout(autoHit);
+                        turn[room] = you == 1 ? 2 : 1;
+                        turn[room]= -turn[room];   // khong ai duoc danh
+                        return;
+                    }
 
                     turn[room] = you == 1 ? 2 : 1;
 
@@ -275,6 +299,27 @@ class socket {
             // hit caro
             socket.on('hit', hit )
 
+            // xin hoa
+            draw = false;
+            socket.on('draw',()=>{
+                draw = true;
+                socket.to(room).emit('draw please');
+                setTimeout(()=>{
+                    draw = false;
+                },5000);
+            })
+
+            socket.on('accept draw',()=>{
+                if(draw){
+                    io.in(room).emit('win', 'no win or lose');
+                    clearBoard(room);
+                    clearTimeout(autoHit);
+                    turn[room] = you == 1 ? 2 : 1;
+                    turn[room]= -turn[room];   // khong ai duoc danh
+                    return;
+                }
+            });
+
             socket.on('end',()=>{
                 clearTimeout(autoHit);
             })
@@ -282,14 +327,14 @@ class socket {
             socket.on('clear',()=>{
                 turn[room] = Math.abs(turn[room]);
                 clearTimeout(autoHit);
-                clearBoard(boards[room]);
+                clearBoard(room);
             })
 
 
 
             socket.on('friend-in',(nameCompetitor)=>{
                 clearTimeout(autoHit);
-                clearBoard(boards[room]);
+                clearBoard(room);
                 socket.to(room).emit('reply',nameCompetitor)
             })
 
@@ -298,7 +343,7 @@ class socket {
                 you = 1;
                 turn[room] = you;
                 clearTimeout(autoHit);
-                clearBoard(boards[room]);
+                clearBoard(room);
             })
 
             // Chat
@@ -309,6 +354,7 @@ class socket {
 
 
             socket.on('disconnect', () => {
+                clearTimeout(autoHit);
                 you = leaveRoom(room);
                 socket.to(room).emit('friend-out');
             })

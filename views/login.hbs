@@ -1,10 +1,19 @@
-    <div class="login">
-        <form action="/caroRoom" method="post">
-        <label for="name">Name: </label>
-        <input type="text" id="name" name="user">
-        <label for="room">Room: </label>
-        <input type="text" id="room" name="room">
-        <button id="btnLogin" type="submit">Login</button>
-        </form>
-    </div>
+<div class="container">
+    <div class="login-wrapper">
 
+        <div class="login-content">
+
+            <h1 class="title-login">Login</h1>
+
+
+            <form action="/caroRoom" method="post" autocomplete="off">
+                <label for="name">Name: </label>
+                <input type="text" placeholder="Type your name" name="user" class="inp-login" id="name" required = "required"/> 
+                <br>
+                <label for="room">Room: </label>
+                <input type="text" placeholder="Create, find room" name="room" class="inp-login" id="room"  required = "required"/> 
+                <button id="btn-login" type="submit">Login</button>
+            </form>
+        </div>
+    </div>
+</div>

@@ -14,7 +14,59 @@
     width: max-content;
     margin: 0 auto;
 }
+/* Login layout */
 
+.login-wrapper{
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    height: 100vh;
+}
+
+.login-content{
+    background-color: #fff;
+    padding: 20px;
+    border-radius: 10px;
+}
+
+.title-login{
+    text-align: center;
+    line-height: 2;
+}
+
+.login-content label{
+    line-height: 1.8;
+}
+
+.inp-login{
+    outline: none;
+    border: 1px solid steelblue;
+    font-size: 15px;
+    display: block;
+    line-height: 2.8;
+    padding: 0 10px;
+}
+.inp-login:focus{
+    box-shadow: 0 0 3px 1px rgb(124, 190, 245);
+}
+
+#btn-login{
+    background-color: steelblue;
+    display: block;
+    margin: 15px auto;
+    padding: 10px;
+    border: 1px solid steelblue;
+    border-radius: 5px;
+    color: #fff;
+    cursor: pointer;
+}
+#btn-login:hover{
+    color: steelblue;
+    background-color: #fff;
+}
+
+
+/* CaroRoom layout */
 .roomName{
     text-align: center;
 }
@@ -57,6 +109,7 @@
 
 .caro-board{
     width: max-content;
+    height: max-content;
     background-color: #fff;
     display: grid;
     grid-template-columns: repeat(20,auto);
@@ -93,7 +146,7 @@
 .announced{
     line-height: 1;
     margin-top: 71px;
-    font-size: 18rem;
+    font-size: 10rem;
     display: block;
     opacity: 0.5;
     overflow: auto;
@@ -122,10 +175,41 @@
     color: royalblue;
 }
 
+.btn-draw{
+    border: 1px solid green;
+    outline: none;
+    background-color: green;
+    font-size: 10px;
+    font-weight: 600;
+    padding: 5px;
+    border-radius: 10px;
+    color: #fff;
+    cursor: pointer;
+    display: inline;
+    width: max-content;
+}
+.btn-draw:hover{
+    background-color: #fff;
+    color: green;
+}
+
+#btn-draw{
+    position: absolute;
+    bottom: 0;
+    left: 50%;
+    transform: translateX(-50%);
+}
+
+.accept-draw{
+    position: absolute;
+    top: 0;
+}
+
 @media only screen and (max-width: 700px){
     .cross-word{
         width: 20px;
         height: 20px;
+        font-size: 27px;
     }
 }
 
@@ -133,5 +217,22 @@
     .cross-word{
         width: 18px;
         height: 18px;
+        font-size: 23px;
+    }
+}
+
+@media only screen and (max-width: 500px){
+    .cross-word{
+        width: 15px;
+        height: 15px;
+        font-size: 16px;
+    }
+}
+
+@media only screen and (max-width: 400px){
+    .cross-word{
+        width: 11px;
+        height: 11px;
+        font-size: 16px;
     }
 }
