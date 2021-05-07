@@ -1,6 +1,6 @@
     const $ = document.querySelector.bind(document);
     const socket = io('https://caro-room.herokuapp.com');
-    var user = "{{user}}", room = "{{room}}";
+    // var user = "{{user}}", room = "{{room}}";
     const caroBoard = $('.caro-board');
     var limited;
     var time = 16
@@ -16,7 +16,7 @@
     socket.on('competitor', (nameCompetitor) => {
         clearBoard();
         $('#competitor-name').textContent = nameCompetitor;
-        socket.emit('friend-in', {{user}});
+        socket.emit('friend-in', user);
     })
     socket.on('reply', (nameCompetitor) => {
         $('#competitor-name').textContent = nameCompetitor;
