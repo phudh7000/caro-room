@@ -16,7 +16,7 @@
     socket.on('competitor', (nameCompetitor) => {
         clearBoard();
         $('#competitor-name').textContent = nameCompetitor;
-        socket.emit('friend-in', '{{user}}');
+        socket.emit('friend-in', {{user}});
     })
     socket.on('reply', (nameCompetitor) => {
         $('#competitor-name').textContent = nameCompetitor;
