@@ -1,5 +1,5 @@
     const $ = document.querySelector.bind(document);
-    const socket = io('http://localhost:3000');
+    const socket = io('https://caro-room.herokuapp.com');
     var user = "{{user}}", room = "{{room}}";
     const caroBoard = $('.caro-board');
     var limited;
