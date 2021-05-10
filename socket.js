@@ -8,6 +8,7 @@ class socket {
         var count = {};
         var draw;
         var turn = {};
+        var autoHit = null;
         function addPerson(data) {
             for (let i of listRoom) {
                 if (i.name == data.room) {
@@ -222,7 +223,7 @@ class socket {
             }
             var room;
             var you;
-            var autoHit = null;
+            
 
             clearTimeout(autoHit);
 
