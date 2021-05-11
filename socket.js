@@ -6,7 +6,7 @@ class socket {
         var listRoom = [];
         var boards = {};
         var count = {};
-        var draw;
+        var draw={};
         var turn = {};
         var autoHit = null;
         function addPerson(data) {
@@ -31,6 +31,9 @@ class socket {
                 if (listRoom[i].name == room && listRoom[i].person == 1) {
                     listRoom.splice(i, 1);
                     delete turn[room];
+                    delete boards[room];
+                    delete draw[room];
+                    delete count[room];
                     return;
                 }
                 if (listRoom[i].name == room && listRoom[i].person == 2) {
@@ -223,6 +226,7 @@ class socket {
             }
             var room;
             var you;
+            draw[room] = false;
             
 
             clearTimeout(autoHit);
@@ -301,17 +305,17 @@ class socket {
             socket.on('hit', hit )
 
             // xin hoa
-            draw = false;
+            
             socket.on('draw',()=>{
-                draw = true;
+                draw[room] = true;
                 socket.to(room).emit('draw please');
                 setTimeout(()=>{
-                    draw = false;
+                    draw[room] = false;
                 },5000);
             })
 
             socket.on('accept draw',()=>{
-                if(draw){
+                if(draw[room]){
                     io.in(room).emit('win', 'no win or lose');
                     clearBoard(room);
                     clearTimeout(autoHit);

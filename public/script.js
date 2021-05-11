@@ -118,9 +118,9 @@
         var crossWord = $(`div[row="${row}"][col="${col}"]`);
         crossWord.textContent = data;
         if (data == 'x') {
-            crossWord.style.color = 'blue';
+            crossWord.style.color = '#001189';
         } else {
-            crossWord.style.color = 'red';
+            crossWord.style.color = '#ff5555';
         }
     })
 

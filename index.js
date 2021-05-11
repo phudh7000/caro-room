@@ -2,7 +2,11 @@ const express = require('express');
 const exphbs = require('express-handlebars');
 const path = require('path');
 const socket = require('./socket');
+const cors = require('cors')
 const app = express();
+
+
+app.use(cors());
 
 app.engine('hbs',exphbs({
     extname: '.hbs'
