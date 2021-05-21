@@ -8,7 +8,10 @@ class socket {
         var count = {};
         var draw={};
         var turn = {};
-        var autoHit = null;
+        var autoHit = {};
+        var ready = {};
+        var begin = {};
+        var locked ={};
         function addPerson(data) {
             for (let i of listRoom) {
                 if (i.name == data.room) {
@@ -201,7 +204,8 @@ class socket {
         }
 
         function clearBoard(room) {
-            let l = boards[room].length;
+            if(boards[room])
+            var l = boards[room].length;
             for (let i = 0; i < l; i++) {
                 boards[room].shift();
                 boards[room].push([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0]);
@@ -226,19 +230,27 @@ class socket {
             }
             var room;
             var you;
-            draw[room] = false;
             
 
-            clearTimeout(autoHit);
+            clearTimeout(autoHit[room]);
 
             socket.on('connected', data => {
-                clearTimeout(autoHit);
+                if(locked[data.room] == 'full'){
+                    socket.emit('redirect');
+                    return;
+                }
+                clearTimeout(autoHit[room]);
                 socket.join(data.room);
                 you = addPerson(data);
+                if(you == 2)locked[data.room] = 'full';
                 room = data.room
                 boards[room] = boardCaro;
                 count[room] = 0;
                 turn[room] = 1;
+                draw[room] = false;
+                ready[room] = 0;
+                begin[room] = false;
+
                 socket.to(room).emit('competitor',data.user);
             })
 
@@ -252,7 +264,7 @@ class socket {
                     cols.forEach((j)=>{
                         if(boards[room][i][j] == 0){
                         socket.to(room).emit('auto-hit', i, j);
-                        clearTimeout(autoHit);
+                        clearTimeout(autoHit[room]);
                         return;
                     } 
                     })
@@ -261,11 +273,12 @@ class socket {
 
                
             function hit(row,col){
+                if(!begin[room])return;
                 if (turn[room] != you) return;
                 var data = you == 1 ? 'x' : 'o';
                 if (boards[room][row][col] == 0) {
 
-                    clearTimeout(autoHit);
+                    clearTimeout(autoHit[room]);
                     count[room]+=1;
                     socket.to(room).emit('my-turn');
                     socket.emit('friend-turn');
@@ -275,30 +288,62 @@ class socket {
                         socket.emit('win', true)
                         socket.to(room).emit('win', false);
                         clearBoard(room);
-                        clearTimeout(autoHit);
+                        clearTimeout(autoHit[room]);
                         turn[room] = you == 1 ? 2 : 1;
                         turn[room]= -turn[room];   // khong ai duoc danh
+                        begin[room] = false;
+                        ready[room]=0;
                         return;
                     };
 
                     if(count[room] == 400){
                         io.in(room).emit('win', 'no win or lose');
                         clearBoard(room);
-                        clearTimeout(autoHit);
+                        clearTimeout(autoHit[room][room]);
                         turn[room] = you == 1 ? 2 : 1;
                         turn[room]= -turn[room];   // khong ai duoc danh
+                        begin[room] = false;
+                        ready[room]=0;
                         return;
                     }
 
                     turn[room] = you == 1 ? 2 : 1;
 
-                    autoHit = setTimeout(()=>{
+                    autoHit[room] = setTimeout(()=>{
                         randomHit(turn[room],room);
-                    },16000)
+                    },20000)
                 }
             }
             
             
+            //ready
+            var only = true;
+            socket.on('ready',()=>{
+                if(only){
+                    ready[room]++;
+                    if(ready[room]==2){
+                    begin[room] = true;
+
+
+                    io.in(room).emit('start');
+                    if(turn[room]==you){
+                        socket.to(room).emit('friend-turn');
+                        socket.emit('my-turn');
+                    }else{
+                        socket.to(room).emit('my-turn');
+                        socket.emit('friend-turn');
+                    }
+                }
+                    only = false;
+                    console.log(ready[room]);
+                }
+            })
+
+            socket.on('cancel ready',()=>{
+                if(ready[room]>0)
+                ready[room]--;
+                only = true;
+            })
 
 
             // hit caro
@@ -318,27 +363,30 @@ class socket {
                 if(draw[room]){
                     io.in(room).emit('win', 'no win or lose');
                     clearBoard(room);
-                    clearTimeout(autoHit);
+                    clearTimeout(autoHit[room]);
                     turn[room] = you == 1 ? 2 : 1;
                     turn[room]= -turn[room];   // khong ai duoc danh
+                    begin[room] = false;
+                    ready[room]= 0;
                     return;
                 }
             });
 
             socket.on('end',()=>{
-                clearTimeout(autoHit);
+                clearTimeout(autoHit[room]);
             })
 
             socket.on('clear',()=>{
                 turn[room] = Math.abs(turn[room]);
-                clearTimeout(autoHit);
+                clearTimeout(autoHit[room]);
                 clearBoard(room);
+                only = true;
             })
 
 
 
             socket.on('friend-in',(nameCompetitor)=>{
-                clearTimeout(autoHit);
+                clearTimeout(autoHit[room]);
                 clearBoard(room);
                 socket.to(room).emit('reply',nameCompetitor)
             })
@@ -347,7 +395,7 @@ class socket {
             socket.on('friend-out', () => {
                 you = 1;
                 turn[room] = you;
-                clearTimeout(autoHit);
+                clearTimeout(autoHit[room]);
                 clearBoard(room);
             })
 
@@ -359,9 +407,14 @@ class socket {
 
 
             socket.on('disconnect', () => {
-                clearTimeout(autoHit);
+                locked[room] = 'not full';
+                clearTimeout(autoHit[room]);
                 you = leaveRoom(room);
                 socket.to(room).emit('friend-out');
+                if(begin[room]){
+                    socket.to(room).emit('win',true);
+                }
+                console.log('ok');
             })
 
         })

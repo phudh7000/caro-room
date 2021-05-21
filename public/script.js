@@ -1,9 +1,15 @@
     const $ = document.querySelector.bind(document);
-    const socket = io('https://caro-room.herokuapp.com');
+    const socket = io('http://localhost:3000/');
+    
     // var user = "{{user}}", room = "{{room}}";
     const caroBoard = $('.caro-board');
     var limited;
-    var time = 16
+    var time = 20;
+    var ready;
+    socket.on('redirect',()=>{
+        window.location = 'http://localhost:3000/';
+        alert('Phòng đã đủ người');
+    })
 
     socket.emit('connected', { user, room })
     socket.on('friend-out', () => {
@@ -15,6 +21,10 @@
 
     socket.on('competitor', (nameCompetitor) => {
         clearBoard();
+        $('.ready').style.opacity=1;
+        $('.ready').textContent='Sẵn sàng';
+        socket.emit('cancel ready');
+        ready = false;
         $('#competitor-name').textContent = nameCompetitor;
         socket.emit('friend-in', user);
     })
@@ -32,34 +42,56 @@
         })
     }
 
-    var turn = false;
-    function handleHit() {
+    //ready
+    ready = false;
 
+    $('.ready').onclick = function(){
+        if(!ready){
+            this.style.opacity=0.8;
+            this.textContent='Hủy';
+            ready = true;
+            socket.emit('ready');
+        }else{
+            this.style.opacity=1;
+            this.textContent='Sẵn sàng';
+            ready = false;
+            socket.emit('cancel ready');
+        }
+        
+    }
+
+    socket.on('start',()=>{
+        $('.ready').style.display = 'none';
+        $('.ready').style.opacity=1;
+        $('.ready').textContent='Sẵn sàng';
+        ready = false;
+    })
+
+    //HIT
+    
+    function handleHit() {
         let row = this.getAttribute('row');
         let col = this.getAttribute('col');
         socket.emit('hit', row, col);
-        socket.on('friend-turn', () => {
-            $('.my-turn').textContent = '';
-
-            if (turn) {
-                clearInterval(limited)
-
-                let remainingTime = time;
-                $('.your-turn').textContent = remainingTime;
-                limited = setInterval(() => {
-                    remainingTime--;
-                    if (remainingTime <= 0) {
-                        $('.your-turn').textContent = '';
-                        clearInterval(limited)
-                    }
-                    $('.your-turn').textContent = remainingTime;
-                }, 1000);
-                turn = false;
-            }
-        })
-
-
     }
+
+    socket.on('friend-turn', () => {
+        $('.my-turn').textContent = '';
+
+            clearInterval(limited)
+
+            let remainingTime = time;
+            $('.your-turn').textContent = remainingTime;
+            limited = setInterval(() => {
+                remainingTime--;
+                if (remainingTime <= 0) {
+                    $('.your-turn').textContent = '';
+                    clearInterval(limited)
+                }
+                $('.your-turn').textContent = remainingTime;
+            }, 1000);
+            $('#btn-draw').style.opacity = 0.4;
+    })
 
     for (let i = 0; i < 20; i++) {
         for (let j = 0; j < 20; j++) {
@@ -93,6 +125,7 @@
                 clearInterval(limited)
             }
         }, 1000)
+        $('#btn-draw').style.opacity = 1;
     })
 
 
@@ -157,6 +190,7 @@
         $('.box-announced').style.display = 'none';
         clearBoard();
         socket.emit('clear');
+        $('.ready').style.display = 'block';
     }
 
 

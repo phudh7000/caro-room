@@ -108,6 +108,7 @@
 
 
 .caro-board{
+    position: relative;
     width: max-content;
     height: max-content;
     background-color: #fff;
@@ -128,6 +129,21 @@
     line-height: 0.5;
     font-weight: 600;
     overflow: hidden;
+    cursor: pointer;
+}
+
+.ready{
+    position: absolute;
+    width: 100px;
+    top: 50%;
+    left: 50%;
+    transform: translateX(-50%);
+    padding: 10px;
+    font-size: 18px;
+    background-color: rgb(47, 165, 43);
+    border: none;
+    outline: none;
+    border-radius: 15px;
     cursor: pointer;
 }
 
